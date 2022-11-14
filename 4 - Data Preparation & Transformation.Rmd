@@ -1,0 +1,295 @@
+
+
+
+### Free memory Functions
+
+```{r}
+# Clear environment
+rm(list = ls()) 
+
+# Clear console
+cat("\014")  # ctrl+L
+```
+
+#######################################################################################################
+# Data exploration
+#######################################################################################################
+### Basic data exploration
+
+#### Reading in and basic formatting of data
+
+Start by reading in and formatting the data.
+
+```{r}
+autinsurance <- read.csv(file.choose("../Resources/autinsurance_V2.csv"), stringsAsFactors = TRUE)
+
+```
+
+
+# Libraries
+
+We will use tidyverse libraries including ggplot2, tidyr, dplyr, and stringr to process this data.
+
+We will also use gridExtra to be able to place ggplot2 plots side-by-side.
+
+Also use caret and pROC when evaluating models.
+
+
+```{r}
+# packneeded <- c('ggplot2','stringr','tidyr','dplyr', 'gridExtra', 'caret', 'pROC', "psych" , "moments")
+# install.packages(packneeded, dependencies = TRUE)
+```
+
+
+```{r load-libs, echo=TRUE, eval=TRUE,message=FALSE,warning=FALSE}
+library(ggplot2)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(gridExtra)
+library(caret)
+library(pROC)
+library(psych)
+library(moments)
+```
+
+
+
+```{r}
+names(autinsurance) # variable names
+```
+
+
+#######################################################################################################
+## Assessing Normality 
+#######################################################################################################
+
+Histograms
+
+Normality can be visually assessed with a histogram. A quick histogram can be made using base R’s hist() function:
+
+```{r}
+hist(autinsurance$months_as_customer)
+#ggplot(data=autinsurance) + geom_histogram(aes(x=months_as_customer) , fill = "red", bins = 30)
+```
+
+
+##  Density (Curve) Plots
+You can also use a density plot to visually assess normality:
+
+```{r}
+#plot(density(autinsurance$months_as_customer, na.rm=T))
+ggplot(data=autinsurance) + geom_density(aes(x=months_as_customer) , fill = "red")
+```
+
+## QQ Plots
+A QQ plot can also be used to assess normality:
+
+A QQ plot is a plot of the actual data values against a normal distribution (which has a mean of 0 and standard deviation of 1).
+```{r}
+# qqnorm(autinsurance$months_as_customer)
+ggplot(autinsurance, aes(sample = months_as_customer)) + 
+  geom_qq() + geom_qq_line()
+```
+
+##  Skewness and Kurtosis
+There are a number of ways to get values for skewness and kurtosis. You can get the values alongside other stats with the psych packmonths_as_customer’s describe(). You can also use skewness() and kurtosis() functions from the moments packmonths_as_customer:
+
+```{r}
+describe(autinsurance)
+```
+
+```{r}
+# install.packmonths_as_customers("moments")
+library(moments)
+skewness(autinsurance$months_as_customer)
+kurtosis(autinsurance$months_as_customer)
+```
+
+##  Tests of Normality
+
+Univariate tests of normality are also easily done in R. The stats packmonths_as_customer (included with R) contains both the Kolmogorov-Smirnov (K-S) test and the Shapiro-Wilk’s test. The Shapiro-Wilk’s test is more common and easier to compute in R:
+
+```{r}
+shapiro.test(autinsurance$months_as_customer)
+```
+
+The above p-value is significant at less than 0.05, signifying non-normality.
+
+
+#######################################################################################################
+## Transforming Variables
+#######################################################################################################
+
+The following as some of the many methods you can use if you wish to deal with non-normality by transforming variables (DataNovia, n.d.):
+
+## Square Roots
+
+-- for positive skew
+```{r}
+skewness(autinsurance$months_as_customer)  # Raw data
+skewness(sqrt(autinsurance$months_as_customer))
+```
+
+-- for negative skew
+```{r}
+skewness(autinsurance$months_as_customer)
+skewness(sqrt(max(autinsurance$months_as_customer+1)-autinsurance$months_as_customer))
+```
+
+## Log
+
+-- for positive skew
+```{r}
+skewness(autinsurance$months_as_customer)
+skewness(log10(autinsurance$months_as_customer))
+```
+
+-- for negative skew
+```{r}
+skewness(autinsurance$months_as_customer)
+skewness(log10(max(autinsurance$months_as_customer+1)-autinsurance$months_as_customer) )
+```
+
+
+## Inverse
+
+-- for positive skew 
+```{r}
+skewness(autinsurance$months_as_customer)
+skewness(1/autinsurance$months_as_customer)
+```
+
+-- for negative 
+```{r}
+skewness(autinsurance$months_as_customer)
+skewness(1/max((autinsurance$months_as_customer)+1))
+```
+
+
+#######################################################################################################
+# Summary of Transform Methods
+#######################################################################################################
+Below is a quick summary of all of the transform methods supported in the method argument of the preProcess() function in caret.
+
+“BoxCox“: apply a Box–Cox transform, values must be non-zero and positive.
+“YeoJohnson“: apply a Yeo-Johnson transform, like a BoxCox, but values can be negative.
+“expoTrans“: apply a power transform like BoxCox and YeoJohnson.
+“zv“: remove attributes with a zero variance (all the same value).
+“nzv“: remove attributes with a near zero variance (close to the same value).
+“center“: subtract mean from values.
+“scale“: divide values by standard deviation.
+“range“: normalize values.
+“pca“: transform data to the principal components.
+“ica“: transform data to the independent components.
+“spatialSign“: project data onto a unit circle.
+The following sections will demonstrate some of the more popular methods.
+
+
+# Scale
+The scale transform calculates the standard deviation for an attribute and divides each value by that standard deviation.
+
+```{r}
+# load libraries
+library(caret)
+# calculate the pre-process parameters from the dataset
+preprocessParams <- preProcess(autinsurance, method=c("scale"))
+# summarize transform parameters
+print(preprocessParams)
+# transform the dataset using the parameters
+transformed <- predict(preprocessParams, autinsurance)
+# summarize the transformed dataset
+summary(transformed)
+```
+
+# Center
+The center transform calculates the mean for an attribute and subtracts it from each value
+
+```{r}
+# load libraries
+library(caret)
+# calculate the pre-process parameters from the dataset
+preprocessParams <- preProcess(autinsurance, method=c("center"))
+# summarize transform parameters
+print(preprocessParams)
+# transform the dataset using the parameters
+transformed <- predict(preprocessParams, autinsurance)
+# summarize the transformed dataset
+summary(transformed)
+```
+
+# Standardize
+Combining the scale and center transforms will standardize your data. Attributes will have a mean value of 0 and a standard deviation of 1.
+
+```{r}
+# load libraries
+library(caret)
+# calculate the pre-process parameters from the dataset
+preprocessParams <- preProcess(autinsurance, method=c("center", "scale"))
+# summarize transform parameters
+print(preprocessParams)
+# transform the dataset using the parameters
+transformed <- predict(preprocessParams, autinsurance)
+# summarize the transformed dataset
+summary(transformed)
+```
+
+# Normalize
+Data values can be scaled into the range of [0, 1] which is called normalization.
+
+```{r}
+# load libraries
+library(caret)
+# calculate the pre-process parameters from the dataset
+preprocessParams <- preProcess(autinsurance, method=c("range"))
+# summarize transform parameters
+print(preprocessParams)
+# transform the dataset using the parameters
+transformed <- predict(preprocessParams, autinsurance)
+# summarize the transformed dataset
+summary(transformed)
+```
+
+# Box-Cox Transform
+When an attribute has a Gaussian-like distribution but is shifted, this is called a skew. The distribution of an attribute can be shifted to reduce the skew and make it more Gaussian. The BoxCox transform can perform this operation (assumes all values are positive).
+
+```{r}
+# load libraries
+library(mlbench)
+library(caret)
+
+# calculate the pre-process parameters from the dataset
+preprocessParams <- preProcess(autinsurance, method=c("BoxCox"))
+# summarize transform parameters
+print(preprocessParams)
+# transform the dataset using the parameters
+transformed <- predict(preprocessParams, autinsurance)
+# summarize the transformed dataset (note pedigree and age)
+summary(transformed)
+
+```
+Notice, we applied the transform to only two attributes that appear to have a skew. Running the recipe, you will see:
+
+# Yeo-Johnson Transform
+Another power-transform like the Box-Cox transform, but it supports raw values that are equal to zero and negative.
+
+```{r}
+# load libraries
+library(mlbench)
+library(caret)
+# load the dataset
+data(PimaIndiansDiabetes)
+# summarize pedigree and age
+summary(autinsurance)
+# calculate the pre-process parameters from the dataset
+preprocessParams <- preProcess(autinsurance, method=c("YeoJohnson"))
+# summarize transform parameters
+print(preprocessParams)
+# transform the dataset using the parameters
+transformed <- predict(preprocessParams, autinsurance)
+# summarize the transformed dataset (note pedigree and age)
+summary(transformed)
+```
+
+
+

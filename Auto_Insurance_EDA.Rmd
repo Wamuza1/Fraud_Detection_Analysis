@@ -1,0 +1,424 @@
+
+### Free memory Functions
+
+```{r}
+# Clear environment
+rm(list = ls()) 
+
+# Clear console
+cat("\014")  # ctrl+L
+```
+
+######################################################################################################
+# Data exploration
+#######################################################################################################
+
+
+#### Reading in and basic formatting of data
+
+
+
+```{r}
+autinsurance <- read.csv(file.choose("../Resources/insurance_claims.csv"), stringsAsFactors = TRUE)
+
+```
+
+
+# Libraries
+
+We will use tidyverse libraries including ggplot2, tidyr, dplyr, and stringr to process this data.
+
+We will also use gridExtra to be able to place ggplot2 plots side-by-side.
+
+Also use caret and pROC when evaluating models.
+
+
+```{r}
+#packneeded <- c('ggplot2','stringr','tidyr','dplyr', 'gridExtra', 'caret', 'pROC', "psych" , "moments")
+#install.packages(packneeded, dependencies = TRUE)
+```
+
+
+```{r load-libs, echo=TRUE, eval=TRUE,message=FALSE,warning=FALSE}
+library(ggplot2)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(gridExtra)
+library(caret)
+library(pROC)
+library(psych)
+library(moments)
+```
+
+# Data Manipulation 
+
+```{r}
+names(autinsurance)
+```
+#####################################################################
+Cleaning Names with janitor
+Let’s make sure all the names are lowercase. This will make typing them in later analyses easier, as you don’t ever need to remember what is capital and what is not. Install the janitor package:
+#####################################################################
+
+```{r}
+#install.packages("janitor")
+library(janitor)
+
+#Run the following code:
+autinsurance <- autinsurance %>% janitor::clean_names()
+
+#clean_names(autinsurance)
+names(autinsurance)
+
+```
+
+
+```{r}
+sample_n(autinsurance, 5)
+```
+
+
+```{r}
+#names(autinsurance) # variable names
+```
+
+#######################################################################################################
+## Descriptive statistics include:
+#######################################################################################################
+
+Mean - arithmetic average
+Median - middle value
+Mode - most frequent value
+Standard Deviation - variation around the mean
+Interquartile Range - range encompasses 50% of the values
+Kurtosis - peakedness of the data distribution
+Skewness - symmetry of the data distribution
+
+
+```{r}
+str(autinsurance) # structure
+```
+#################################################
+Statistical Summry
+#################################################
+The summary() function is known as a generic R function. It will return a preprogrammed summary for any R object. Because autinsurance is a data frame, we get a summary of each column. Factors will be summarized by their frequency (i.e., number of observations), while numeric or integer variables will print out a five number summary, and characters simply print their length. The number of missing observations for any variable will also be printed if they are present. 
+
+```{r}
+summary(autinsurance)
+```
+Summary Stats - skim()
+
+skim is another function that produces summary statistics. It will also produce a small histogram to show the distribution of your data (for numeric/integers).
+
+
+```{r}
+# install.packages("skimr")
+library(skimr)
+skim(autinsurance)
+```
+
+
+jmv package the get some frequencies:
+
+We will use the descriptives() function. This will provide nice output. We will use the parameter freq=TRUE to get frequencies for factors.
+```{r}
+library("jmv")
+autinsurance %>%
+  select(property_damage, collision_type, police_report_available) %>% descriptives(freq = TRUE)
+```
+
+
+```{r}
+glimpse(autinsurance) # You need to install dplyr (used to manipulate data in R, not)
+```
+
+
+```{r}
+library(psych)
+describe(autinsurance) # Psych
+```
+
+A quick check for typos would be to examine the list of levels for a factor or character, such as:
+
+```{r}
+# just for factors
+levels(autinsurance$incident_state)
+levels(autinsurance$policy_state)
+```
+
+```{r}
+# for characters and factors
+sort(unique(autinsurance$policy_state)) 
+```
+
+# Correlation
+A correlation matrix is a table of the calculated correlation coefficients of all variables. This provides a quantitative measure to guide the decision making process. The following will produce a correlation matrix for the sp4 dataset:
+
+
+
+```{r}
+# Note - Correlation only works with numeric values 
+# Need to subset the dataset to remove the string values
+autinsuranceNum <- Filter(is.numeric, autinsurance) # create a new data set and pass into it only numerical values
+names(autinsuranceNum)
+cor(autinsuranceNum)
+
+```
+
+
+Correlation (Pearson, Kendall, Spearman) - the most widely used correlation statistic to measure the degree of the relationship between linearly  related variables
+
+```{r}
+#cor(autinsuranceNum, use = "complete.obs", method = "pearson")
+```
+
+Kendall rank correlation is a non-parametric test that measures the strength of dependence between two variables
+
+```{r}
+
+
+#cor(autinsuranceNum, use = "complete.obs", method = "kendall")
+```
+
+Spearman rank correlation is a non-parametric test that is used to measure the degree of  association between  two variables
+
+```{r}
+#cor(autinsuranceNum, use = "complete.obs", method = "spearman")
+```
+
+```{r}
+# Default plot
+heatmap(cor(autinsuranceNum))
+```
+
+
+Find which variables have a high correlation inside of the correlation matrix
+
+```{r}
+library(corrplot)
+corrplot(cor(autinsuranceNum), method = "ellipse")
+```
+######################################
+moments: Moments, Cumulants, Skewness, Kurtosis and Related Tests
+######################################
+
+```{r}
+library(moments)
+skewness(autinsurance$property_claim)
+
+```
+
+#######################################################################################################
+## Graphical Methods
+#######################################################################################################
+
+Now that we’ve checked for missing values and typos and made corrections, we can graphically examine the sample data distribution of our data. Frequency distributions are useful because they can help us visualize the center (e.g., RV) and spread or dispersion (e.g., low and high) of our data. Typically in introductory statistics the normal (i.e., Gaussian) distribution is emphasized.
+
+Short Description of Graphical Methods
+Plot Types	       Description
+Bar	               a plot where each bar represents the frequency of observations for a ‘group’
+Histogram	         a plot where each bar represents the frequency of observations for a ‘given range of values’
+Density	           an estimation of the frequency distribution based on the sample data
+Box-Whisker	       a visual representation of median, quartiles, symmetry, skewness, and outliers
+Scatter & Line     a graphical display of one variable plotted on the x axis and another on the y axis
+Quantile-Quantile	 a plot of the actual data values against a normal distribution
+
+
+##  Histogram
+A histogram is similar to a bar plot, except that instead of summarizing categorical data, it categorizes a continuous variable like clay content into non-overlappying intervals for the sake of display. The number of intervals can be specified by the user, or can be automatically determined using an algorithm, such as nclass.Sturges(). Since histograms are dependent on the number of bins, for small datasets they’re not the best method of determining the shape of a distribution.
+
+```{r}
+hist(autinsurance$months_as_customer, col = 'blue')  
+
+```
+
+
+##  Scatter plot (One dimension)
+
+```{r}
+plot(autinsurance$months_as_customer, col = 'red', main = "Claimants' age ")
+```
+
+##  Box plots
+Box plots are a graphical representation of the five number summary, depicting quartiles (i.e. the 25%, 50%, and 75% quantiles), minimum, maximum and outliers (if present). Boxplots convey the shape of the data distribution, the presence of extreme values, and the ability to compare with other variables using the same scale, providing an excellent tool for screening data, determining thresholds for variables and developing working hypotheses.
+
+The parts of the boxplot are shown in the figure below. The “box” of the boxplot is defined as the 1st quartile, (Q1 in the figure) and the 3rd quartile, (Q3 in the figure). The median, or 2nd quartile, is the dark line in the box. The whiskers (typically) show data that is 1.5 * IQR above and below the 3rd and 1st quartile. Any data point that is beyond a whisker is considered an outlier.
+
+That is not to say the outlier points are in error, just that they are extreme compared to the rest of the dataset. However, you may want to evaluate these points to ensure that they are correct.
+
+```{r}
+boxplot(autinsurance$months_as_customer, col = 'red', main = "Claimants' months ")
+
+```
+
+```{r}
+ggplot(autinsurance, (aes(x = police_report_available, y = age ))) +
+  geom_boxplot()
+```
+
+##  Scatter plot 
+Plotting points of one ratio or interval variable against another is a scatter plot. Plots can be produced for a single or multiple pairs of variables. Many independent variables are often under consideration in soil survey work. This is especially common when GIS is used, which offers the potential to correlate soil attributes with a large variety of raster datasets.
+
+The purpose of a scatterplot is to see how one variable relates to another. With modeling in general the goal is parsimony (i.e., simple). The goal is to determine the fewest number of variables required to explain or describe a relationship. If two variables explain the same thing, i.e., they are highly correlated, only one variable is needed. The scatterplot provides a perfect visual reference for this.
+
+Create a basic scatter plot using the loafercreek dataset.
+
+```{r}
+#par(mfrow = c(2,1), mar = c(4,4,2,1))
+
+with(autinsurance, plot(age, months_as_customer))
+abline(h =100, lwd =2, lty = 2, col = "blue")
+```
+
+# scatter plot
+
+```{r}
+
+ggplot(autinsurance, aes(x = age, y = injury_claim)) +
+  geom_point() +
+  ylim(100, 0)
+```
+
+# line plot
+
+```{r}
+
+ggplot(autinsurance, aes(y = age, x = injury_claim, group = fraud_reported)) +
+  geom_line() +
+  coord_flip() +
+  xlim(100, 0)
+```
+
+
+
+############################################################################################################
+The function below produces a scatterplot matrix for all the numeric variables in the dataset. This is a good command to use for determining rough linear correlations for continuous variables.
+#######################################################################################################3
+
+```{r}
+# Load the GGally package
+library(GGally)
+
+# Create a scatter plot matrix
+vars <- c("number_of_vehicles_involved", "witnesses", "total_claim_amount", "fraud_reported")
+
+ggpairs(autinsurance[vars])
+```
+
+###################################################################
+Bar Plot
+###################################################################
+A bar plot is a graphi It is a graphical alternative to to the table() function.
+
+```{r}
+library(ggplot2)
+
+# bar plot
+ggplot(autinsurance, aes(x = auto_make)) +
+  geom_bar()
+```
+
+
+```{r}
+
+# Change the width of bars
+ggplot(data=autinsurance, aes(x=auto_make, y=number_of_vehicles_involved)) +
+  geom_bar(stat="identity", width=0.5)
+# Change colors
+ggplot(data=autinsurance, aes(x=auto_make, y=number_of_vehicles_involved)) +
+  geom_bar(stat="identity", color="blue", fill="white")
+
+# Minimal theme + blue fill color
+p<-ggplot(data=autinsurance, aes(x=auto_make, y=number_of_vehicles_involved, fill=auto_make)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  theme_minimal()
+p
+
+# Change barplot fill colors by groups
+p2<-ggplot(autinsurance, aes(x=auto_make, y=number_of_vehicles_involved, fill=auto_make)) +
+  geom_bar(stat="identity")+theme_minimal()
+p2
+
+```
+
+
+```{r}
+# Change histogram plot fill colors by groups
+ggplot(autinsurance, aes(x=number_of_vehicles_involved, fill=insured_sex, color=insured_sex)) +
+  geom_histogram(position="identity")
+# Use semi-transparent fill
+p<-ggplot(autinsurance, aes(x=number_of_vehicles_involved, fill=insured_sex, color=insured_sex)) +
+  geom_histogram(position="identity", alpha=0.5)
+p
+# # Add mean lines
+# p+geom_vline(data=autinsurance, aes(xintercept=grp.mean, color=insured_sex),
+#              linetype="dashed")
+```
+
+
+```{r}
+# Use single color
+# ggplot(autinsurance, aes(x=number_of_vehicles_involved, fill=insured_sex)) +
+#   geom_boxplot(fill='#A4A4A4', color="black")+
+#   theme_classic()
+# Change box plot colors by groups
+p<-ggplot(autinsurance, aes(x=insured_hobbies, y=insured_education_level, fill=insured_education_level)) +
+  geom_boxplot()
+p
+```
+
+Color and Groups
+
+```{r}
+# scatter plot
+ggplot(autinsurance, aes(x = total_claim_amount, y = age, color = insured_sex)) + geom_point(size = 3) +
+  ylim(100, 0)
+```
+################################################################################################
+# Density Curve
+
+A density estimation, also known as a Kernel density plot, generally provides a better visualization of the shape of the distribution in comparison to the histogram. Compared to the histogram where the y-axis represents the number or percent (i.e., frequency) of observations, the y-axis for the density plot represents the probability of observing any given value, such that the area under the curve equals one. One curious feature of the density curve is the hint of a two peaks (i.e. bimodal distribution?). Given that our sample includes a mixture of surface and subsurface horizons, we may have two different populations. However considering how much the two distributions overlap, it seems impractical to separate them in this instance.
+
+```{r}
+ggplot(autinsurance, aes(x = age)) +
+  geom_density()
+```
+
+# density plot
+
+```{r}
+ggplot(autinsurance, aes(x = age, color = incident_state)) +
+  geom_density(size = 2)
+```
+
+# Quantile comparison plots (QQplot)
+
+A QQ plot is a plot of the actual data values against a normal distribution (which has a mean of 0 and standard deviation of 1).
+```{r}
+# QQ Plot for Clay
+ggplot(autinsurance, aes(sample = age)) + 
+  geom_qq() +
+  geom_qq_line()
+```
+
+```{r}
+# QQ Plot for Frags
+ggplot(autinsurance, aes(sample = incident_hour_of_the_day)) + 
+  geom_qq() +
+  geom_qq_line()
+```
+```{r}
+to_drop <- c("policy_number" , "policy_bind_date" ,"insured_zip" , "incident_city", "incident_location",  "incident_hour_of_the_day","incident_date",  "auto_year" , "total_claim_amount"  ,"injury_claim" , "property_claim", 'age')
+
+to_drop 
+```
+
+```{r}
+autinsurance = autinsurance[ , - which(names(autinsurance) %in% to_drop)]
+```
+
+```{r}
+write.csv(autinsurance,'Resources/autinsurance_V2.csv')
+```
+

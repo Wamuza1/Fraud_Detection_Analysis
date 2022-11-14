@@ -1,0 +1,246 @@
+---
+title: "Auto Insurance Claim Prediction"
+author: "BBDS"
+date: "11/18/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Free memory Functions
+
+```{r}
+# Clear environment
+rm(list = ls()) 
+
+# Clear packages
+# pacman::p_unload(rgl)
+
+# Clear plots
+# dev.off()  # But only if there IS a plot
+
+# Clear console
+cat("\014")  # ctrl+L
+```
+
+#######################################################################################################
+# Data exploration
+#######################################################################################################
+### Basic data exploration
+
+#### Reading in and basic formatting of data
+
+Start by reading in and formatting the data.
+
+```{r}
+autinsurance <- read.csv(file.choose())
+```
+
+
+# Libraries
+
+We will use tidyverse libraries including ggplot2, tidyr, dplyr, and stringr to process this data.
+
+We will also use gridExtra to be able to place ggplot2 plots side-by-side.
+
+Also use caret and pROC when evaluating models.
+
+
+```{r}
+# packneeded <- c('ggplot2','stringr','tidyr','dplyr', 'gridExtra', 'caret', 'pROC', "psych" , "moments")
+# install.packages(packneeded, dependencies = TRUE)
+```
+
+
+```{r load-libs, echo=TRUE, eval=TRUE,message=FALSE,warning=FALSE}
+library(ggplot2)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(gridExtra)
+library(caret)
+library(pROC)
+library(psych)
+library(moments)
+```
+
+#######################################################################################################
+## Descriptive statistics include:
+#######################################################################################################
+
+```{r}
+autinsurance = subset(autinsurance, select = -c(X) )
+```
+
+
+```{r}
+names(autinsurance) # variable names
+```
+
+```{r}
+dim(autinsurance)
+```
+
+
+```{r}
+str(autinsurance) # structure
+```
+
+
+```{r}
+summary(autinsurance)
+```
+
+
+```{r}
+describe(autinsurance) # Psych
+```
+
+
+```{r}
+#install.packages('ggcorrplot')
+library(ggcorrplot)
+ggcorrplot(autinsurance)
+```
+
+#######################################################################################################
+## # Factor Analysis PCA
+#######################################################################################################
+
+Transform the data to the principal components. The transform keeps components above the variance threshold (default=0.95) or the number of components can be specified (pcaComp). The result is attributes that are uncorrelated, useful for algorithms like linear and generalized linear regression.
+
+```{r}
+which(colnames(autinsurance)=="fraud_reported")
+```
+
+```{r}
+# Splitting the dataset into the Training set and Test set
+# install.packages('caTools')
+library(caTools)
+set.seed(123)
+split = sample.split(autinsurance$fraud_reported, SplitRatio = 0.8)
+training_set = subset(autinsurance, split == TRUE)
+test_set = subset(autinsurance, split == FALSE)
+```
+
+# Feature Scaling
+
+```{r}
+# Feature Scaling
+training_set[-13] = scale(training_set[-13])
+test_set[-13] = scale(test_set[-13])
+
+```
+
+```{r}
+test_set$fraud_reported
+```
+
+# Applying PCA
+
+```{r}
+#install.packages('caret')
+library(caret)
+#
+pca = preProcess(x = training_set[-13], method = 'pca', pcaComp = 2 , kernel = 'rbfdot')
+#
+training_set = predict(pca, training_set)
+#training_set = training_set[c(2, 3, 1)]
+test_set = predict(pca, test_set)
+#test_set = test_set[c(2, 3, 1)]
+```
+
+```{r}
+training_set = training_set[c(2, 3, 1)]
+training_set
+
+```
+
+```{r}
+test_set = test_set[c(2, 3, 1)]
+test_set
+```
+
+#######################################################################################################
+## # Factor Analysis Kernel PCA
+#######################################################################################################
+
+
+```{r}
+library(kernlab)
+kpca = kpca(~., data = training_set[-13], kernel = 'rbfdot',features = 2)
+training_set_kpca = as.data.frame(predict(kpca, training_set))
+training_set_kpca$fraud_reported = training_set$fraud_reported
+test_set_kpca = as.data.frame(predict(kpca, test_set))
+test_set_kpca$fraud_reported = test_set$fraud_reported
+```
+
+```{r}
+training_set_kpca
+```
+
+```{r}
+test_set_kpca
+```
+
+
+#######################################################################################################
+## # Factor Analysis LDA
+#######################################################################################################
+
+```{r}
+# Splitting the dataset into the Training set and Test set
+# install.packages('caTools')
+library(caTools)
+set.seed(123)
+split = sample.split(autinsurance$fraud_reported, SplitRatio = 0.8)
+training_set_LDA = subset(autinsurance, split == TRUE)
+test_set_LDA = subset(autinsurance, split == FALSE)
+```
+
+# Feature Scaling
+
+```{r}
+# Feature Scaling
+training_set_LDA[-34] = scale(training_set_LDA[-34])
+test_set_LDA[34] = scale(test_set_LDA[34])
+
+```
+
+# Applying LDA
+
+```{r}
+library(MASS)
+lda = lda(formula = fraud_reported ~ ., data = training_set)
+training_set = as.data.frame(predict(lda, training_set))
+# training_set = training_set[c(5, 6, 1)]
+ test_set = as.data.frame(predict(lda, test_set))
+# test_set = test_set[c(5, 6, 1)]
+```
+
+
+#######################################################################################################
+## # Factor Analysis Other Methods PCA
+#######################################################################################################
+
+# Independent Component Analysis
+Transform the data to the independent components. Unlike PCA, ICA retains those components that are independent. You must specify the number of desired independent components with the n.comp argument. Useful for algorithms such as naive bayes.
+
+```{r}
+
+library(mlbench)
+
+# calculate the pre-process parameters from the dataset
+preprocessParams <- preProcess(autinsurance_COPY, method=c("center", "scale", "ica"), n.comp=2)
+# summarize transform parameters
+print(preprocessParams)
+# transform the dataset using the parameters
+transformed <- predict(preprocessParams, autinsuranceNum)
+# summarize the transformed dataset
+summary(transformed)
+```

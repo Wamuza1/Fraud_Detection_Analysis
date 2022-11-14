@@ -1,0 +1,339 @@
+
+### Free memory Functions
+
+```{r}
+# Clear environment
+rm(list = ls()) 
+
+# Clear console
+cat("\014")  # ctrl+L
+```
+
+#######################################################################################################
+# Read Data
+#######################################################################################################
+### Basic data exploration
+
+#### Reading in and basic formatting of data
+
+Start by reading in and formatting the data.
+
+```{r}
+autinsurance <- read.csv(file.choose(), stringsAsFactors = TRUE)
+#using this file 'autinsurance_V2.csv'
+```
+
+
+```{r}
+# packneeded <- c('ggplot2','stringr','tidyr','dplyr', 'gridExtra', 'caret', 'pROC', "psych" , "moments")
+# install.packmonths_as_customers(packneeded, dependencies = TRUE)
+```
+
+
+```{r load-libs, echo=TRUE, eval=TRUE,messmonths_as_customer=FALSE,warning=FALSE}
+library(ggplot2)
+# library(stringr)
+# library(tidyr)
+library(dplyr)
+# library(gridExtra)
+# library(caret)
+# library(pROC)
+library(psych)
+library(moments)
+```
+
+
+```{r}
+names(autinsurance)
+```
+
+#######################################################################################################
+# Missing Values
+#######################################################################################################
+
+```{r}
+missing <- autinsurance %>%
+  summarize_all(funs(mean(is.na(.))))
+```
+
+missing <- - assign everything to a new data frame (this step is optional and you could just explore everything in the console)
+- autinsurance %>% - use “rsurvey” and
+- summarize_all( - summarize every column
+- funs( - use the following function (“funs”) to summarize everything
+- mean(is.na(.)))) - take the mean of missing data.
+- the . in parentheses means to use the entire data frame
+- We need to include it because is.na requires an argument
+
+Let’s quickly view what this new missing object looks like using glimpse(). This will print the columns and first row vertically in the console. Because there are 67 columns, we will just look at the first 10.
+
+```{r}
+glimpse(missing)
+```
+
+Complete cases show us which rows aren't missing values, or have complete cases
+
+```{r}
+#complete.cases(autinsurance)
+```
+
+Using brackets to subset: [rows, columns] - let's view the rows with NA's ! means not equal
+
+
+```{r}
+autinsurance[!complete.cases(autinsurance), ]
+```
+
+To begin with, I'll first check if this data has missing values. This can be done by using:
+
+```{r}
+table(is.na(autinsurance))
+```
+
+If there are missing values, we can check these values by using clSums()
+
+```{r}
+colSums(is.na(autinsurance))
+```
+
+#######################################################################################################
+# How to Deal with Missing Values
+#######################################################################################################
+
+# Deleting the observations
+
+If you have large number of observations in your dataset, where all the classes to be predicted are sufficiently represented in the training data, then try deleting (or not to include missing values while model building, for example by setting na.action=na.omit) those observations (rows) that contain missing values. Make sure after deleting the observations, you have:
+
+1. Have sufficent data points, so the model doesn’t lose power.
+2. Not to introduce bias (meaning, disproportionate or non-representation of classes)
+
+```{r}
+# Example
+lm(months_as_customer ~ auto_make, data=autinsurance, na.action=na.omit)  # though na.omit is default in lm()
+autinsurance
+```
+
+# Deleting the variable
+
+If a paricular variable is having more missing values that rest of the variables in the dataset, and, if by removing that one variable you can save many observations, then you are better off without that variable unless it is a really important predictor that makes a lot of business sense. It is a matter of deciding between the importance of the variable and losing out on a number of observations.
+
+
+##  Dropping missing data
+You can remove missing data by using drop_na().
+.
+
+##  Replacing missing data with 0s
+
+Sometimes missing data is meaningful and it would be useful in including them in various analyses. NA values are typically dropped from analyses, but we can include them by changing them to 0s. To do so, we can use mutate():
+
+```{r}
+zero_months_as_customers <- autinsurance %>%
+  mutate(months_as_customer = ifelse(is.na(months_as_customer), 0, months_as_customer))
+```
+Let’s compare the mean months_as_customer of our new data frame and our old one:
+
+```{r}
+mean(autinsurance$months_as_customer, na.rm=T) #note: you must remove NAs for this to run
+
+mean(zero_months_as_customers$months_as_customer)
+```
+
+##  Mean imputation
+If warranted, we can easily replace missing data with means (or medians) like so:
+
+```{r}
+mean_imputation <- autinsurance %>%
+  mutate(months_as_customer = ifelse(is.na(months_as_customer), mean(months_as_customer, na.rm=T), months_as_customer))
+
+mean(mean_imputation$months_as_customer)
+```
+
+# Imputation with mean / median / mode
+Replacing the missing values with the mean / median / mode is a crude way of treating missing values. Depending on the context, like if the variation is low or if the variable has low levermonths_as_customer over the response, such a rough approximation is acceptable and could possibly give satisfactory results.
+
+```{r}
+library(Hmisc)
+impute(autinsurance$months_as_customer, mean)  # replace with mean
+impute(autinsurance$months_as_customer, median)  # median
+impute(autinsurance$months_as_customer, 20)  # replace specific number
+# or if you want to impute manually
+#autinsurance$months_as_customer[is.na(autinsurance$months_as_customer)] <- mean(autinsurance$months_as_customer, na.rm = T)  # not run
+```
+
+# Data  Preprocessing - Taking care of missing data
+imputing missing values for all independent variables
+
+```{r}
+#ave()
+autinsurance$months_as_customer = ifelse(is.na(autinsurance$months_as_customer),
+                    ave(autinsurance$months_as_customer, FUN = function(x) mean(x, na.rm = TRUE)),autinsurance$months_as_customer)
+```
+
+
+```{r}
+#install.packages("dlookr")
+library(dlookr)
+```
+
+After you have acquired the data, you should do the following:
+
+## Diagnose data quality.
+If there is a problem with data quality,
+The data must be corrected or re-acquired.
+Explore data to understand the data and find scenarios for performing the analysis.
+Derive new variables or perform variable transformations.
+The dlookr packmonths_as_customer makes these steps fast and easy:
+
+Performs an data diagnosis or automatically generates a data diagnosis report.
+Discover data in a variety of ways, and automatically generate EDA(exploratory data analysis) report.
+Impute missing values and outliers, resolve skewed data, and binarize continuous variables into categorical variables. And generates an automated report to support it.
+This document introduces data transformation methods provided by the dlookr packmonths_as_customer. You will learn how to transform of tbl_df data that inherits from data.frame and data.frame with functions provided by dlookr.
+
+dlookr increases synergy with dplyr. Particularly in data transformation and data wrangle, it increases the efficiency of the tidyverse packmonths_as_customer group.
+
+
+##  imputes the missing value with imputate_na()
+imputate_na() imputes the missing value contained in the variable. The predictor with missing values support both numeric and categorical variables, and supports the following method.
+
+predictor is numerical variable
+
+“mean” : arithmetic mean
+“median” : median
+“mode” : mode
+“knn” : K-nearest neighbors target variable must be specified
+“rpart” : Recursive Partitioning and Regression Trees target variable must be specified
+“mice” : Multivariate Imputation by Chained Equations target variable must be specified random seed must be set
+
+predictor is categorical variable
+
+“mode” : mode
+“rpart” : Recursive Partitioning and Regression Trees target variable must be specified
+“mice” : Multivariate Imputation by Chained Equations target variable must be specified random seed must be set
+
+In the following example, imputate_na() imputes the missing value of Income, a numeric variable of carseats, using the “rpart” method. summary() summarizes missing value imputation information, and plot() visualizes missing information.
+
+```{r}
+find_na(autinsurance)
+find_outliers(autinsurance)
+find_skewness(autinsurance)
+```
+
+
+```{r}
+if (requireNamespace("rpart", quietly = TRUE)) {
+  months_as_customer <- imputate_na(autinsurance, months_as_customer, method = "rpart")
+}
+```
+
+## Replacing the "?"
+
+```{r}
+# Change the width of bars
+ggplot(autinsurance, aes(x = collision_type, fill = collision_type))+ 
+  geom_bar(stat="count", width=0.7)
+
+ggplot(autinsurance, aes(x = property_damage, fill = property_damage))+ 
+  geom_bar(stat="count", width=0.7)
+
+ggplot(autinsurance, aes(x = police_report_available, fill = police_report_available))+ 
+  geom_bar(stat="count", width=0.7)
+
+```
+
+```{r}
+autinsurance[autinsurance == "?"] <- "Unknown"
+```
+
+```{r}
+# Change the width of bars
+ggplot(autinsurance, aes(x = collision_type, fill = collision_type))+ 
+  geom_bar(stat="count", width=0.7)
+
+ggplot(autinsurance, aes(x = property_damage, fill = property_damage))+ 
+  geom_bar(stat="count", width=0.7)
+
+ggplot(autinsurance, aes(x = police_report_available, fill = police_report_available))+ 
+  geom_bar(stat="count", width=0.7)
+
+```
+
+#######################################################################################################
+# Spotting Outliers
+#######################################################################################################
+
+The outliers packmonths_as_customer provides a number of useful functions to systematically extract outliers. Some of these are convenient and come handy, especially the outlier() and scores() functions.
+
+https://cran.r-project.org/web/packmonths_as_customers/outliers/outliers.pdf
+
+In this section, we will look at different ways to identify outliers in univariate data. Spotting outliers is an important part of the data cleaning process. Many statistical tests rely on the assumption of no extreme scores that may bias the tests. In addition, identifying outliers can help you find mistakes or other problems in the data.
+
+## Detecting Numerical Outliers
+We can use a simple scatterplot for numerical data.
+
+```{r}
+plot(autinsurance$months_as_customer, col = 'red', main = "Claimants'months_as_customer ")
+```
+
+We could also use a boxplot:
+```{r}
+boxplot(autinsurance$months_as_customer)
+```
+
+##  Detecting Categorical Outliers
+
+We can also see if a category contains any numeric outliers based on another variable. For example, if we want to see if there are any months_as_customer outliers for the experience variable, we can use a simple boxplot:
+
+```{r}
+#plot(months_as_customer ~ months_as_customer, data=autinsurance)
+plot(months_as_customer ~ insured_sex, data=autinsurance)
+```
+
+## Detecting outliers with Z-scores
+One way to detect outliers is to standardize values and select values greater than or less than some specific value. There are many ways to create Z-scores in R. You could do it manually:
+
+```{r}
+autinsurance$z_of_months_as_customer <- (autinsurance$months_as_customer - mean(autinsurance$months_as_customer, na.rm=T))/sd(autinsurance$months_as_customer, na.rm = T)
+
+```
+
+# to check
+
+```{r}
+summary(autinsurance$z_of_months_as_customer)
+```
+
+However, we could also load a packmonths_as_customer and use a function to do it quickly. For example, the effectsize packmonths_as_customer has a standardize() function.
+
+# install packmonths_as_customer if needed
+```{r}
+install.packages("effectsize")
+import(effectssize)
+autinsurance$z_of_months_as_customer <- effectsize::standardize(autinsurance$months_as_customer)
+```
+
+# to check
+
+```{r}
+summary(autinsurance$z_of_months_as_customer)
+```
+
+
+
+
+
+
+
+
+
+
+# Dealing With Categorical Data
+Categorical variables represent types of data which may be divided into groups. Examples of categorical variables are race, sex, age group, educational level etc.
+
+```{r}
+autinsurance$insured_sex
+autinsurance$insured_sex = factor(autinsurance$insured_sex, levels = c('FEMALE','MALE'), labels = c(1,2))
+autinsurance$insured_sex
+```
+
+```{r}
+write.csv(autinsurance,'autinsurance_V3.csv')
+```

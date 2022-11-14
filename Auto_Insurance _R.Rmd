@@ -1,0 +1,667 @@
+
+---
+title: "Auto Insurance Claim Prediction"
+author: "BBDS"
+date: "11/18/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Free memory Functions
+
+```{r}
+# Clear environment
+rm(list = ls()) 
+
+# Clear packages
+# pacman::p_unload(rgl)
+
+# Clear plots
+# dev.off()  # But only if there IS a plot
+
+# Clear console
+cat("\014")  # ctrl+L
+```
+
+#######################################################################################################
+# Data exploration
+#######################################################################################################
+### Basic data exploration
+
+#### Reading in and basic formatting of data
+
+Start by reading in and formatting the data.
+
+```{r}
+autinsurance <- read.csv(file.choose())
+
+```
+
+
+# Libraries
+
+We will use tidyverse libraries including ggplot2, tidyr, dplyr, and stringr to process this data.
+
+We will also use gridExtra to be able to place ggplot2 plots side-by-side.
+
+Also use caret and pROC when evaluating models.
+
+
+```{r}
+# packneeded <- c('ggplot2','stringr','tidyr','dplyr', 'gridExtra', 'caret', 'pROC', "psych" , "moments")
+# install.packages(packneeded, dependencies = TRUE)
+```
+
+
+```{r load-libs, echo=TRUE, eval=TRUE,message=FALSE,warning=FALSE}
+library(ggplot2)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(gridExtra)
+library(caret)
+library(pROC)
+library(psych)
+library(moments)
+```
+
+
+```{r}
+names(autinsurance) # variable names
+```
+
+
+```{r}
+summary(autinsurance)
+```
+
+
+```{r}
+describe(autinsurance) # Psych
+```
+
+
+
+#######################################################################################################
+# Data Selection
+#######################################################################################################
+
+## Remove the extra column
+
+```{r}
+str(autinsurance)
+```
+
+```{r}
+autinsurance = select(autinsurance, - "X")
+```
+
+## Change the order of Target variable 
+
+```{r}
+
+# autinsurance  = select(autinsurance,"months_as_customer","age","umbrella_limit","capital_gains","witnesses","total_claim_amount","injury_claim","property_claim","vehicle_claim","auto_year","insured_education_level_High.School","insured_education_level_MD","insured_education_level_Masters","insured_education_level_PhD","insured_occupation_exec.managerial","insured_hobbies_camping","insured_hobbies_chess","insured_hobbies_cross.fit","insured_hobbies_skydiving","insured_hobbies_video.games","insured_hobbies_yachting","insured_relationship_other.relative","insured_relationship_own.child","insured_relationship_wife","collision_type_Rear.Collision","incident_severity_Minor.Damage","incident_severity_Total.Loss","auto_make_Mercedes","auto_model_95","auto_model_Civic","auto_model_Forrestor","auto_model_Jetta","auto_model_Malibu","auto_model_Neon" ,"auto_model_Wrangler","auto_model_X6","fraud_reported") 
+# 
+# autinsurance
+```
+
+```{r}
+# library(dplyr)
+# # Get the copy of the data
+# autinsuranceB <-data.frame(autinsurance)
+# 
+# # Select columns needed using select function from dplyr library
+# autinsurance = select(autinsurance, "incident_location","age","incident_severity","insured_hobbies","policy_number","property_claim","fraud_reported" )
+# 
+# # Or using inxeding
+# # autinsurance = autinsurance[c(7,12,14)]
+# 
+# #autinsurance = autinsurance[c(4,7:14)]
+# names(autinsurance)
+```
+
+#######################################################################################################
+### Encoding the target feature as factor
+######################################################################################################## 
+
+```{r}
+
+# factor()
+str(autinsurance$fraud_reported)
+
+autinsurance$fraud_reported = factor(autinsurance$fraud_reported, levels = c(0, 1))
+
+str(autinsurance$fraud_reported)
+```
+
+
+#######################################################################################################
+###  From caTools packages we will be using sample.split function
+#######################################################################################################
+
+```{r}
+#install.packages('caTools')
+
+library(caTools)
+
+set.seed(45) #
+```
+
+
+```{r}
+
+split = sample.split(autinsurance$fraud_reported, SplitRatio = 0.80)
+training_set = subset(autinsurance, split == TRUE)
+test_set = subset(autinsurance, split == FALSE)
+```
+
+### Applying PCA - UL
+
+```{r}
+#######################################################################################################
+## Applying PCA - UL
+#######################################################################################################
+
+# install.packages('caret')
+# library(caret)
+# #
+# pca = preProcess(x = training_set[-9], method = 'pca', pcaComp = 2)
+# #
+# training_set = predict(pca, training_set)
+# training_set = training_set[c(2, 3, 1)]
+# test_set = predict(pca, test_set)
+# test_set = test_set[c(2, 3, 1)]
+```
+
+### Applying LDA - SL
+
+```{r}
+#######################################################################################################
+## Applying LDA - SL
+#######################################################################################################
+
+# library(MASS)
+# lda = lda(formula = Customer_Segment ~ ., data = training_set)
+# training_set = as.data.frame(predict(lda, training_set))
+# training_set = training_set[c(5, 6, 1)]
+# test_set = as.data.frame(predict(lda, test_set))
+# test_set = test_set[c(5, 6, 1)]
+```
+
+### Applying Kernel PCA
+
+```{r}
+
+#######################################################################################################
+### Applying Kernel PCA
+#######################################################################################################
+
+# #install.packages('kernlab')
+# library(kernlab)
+# kpca = kpca(~., data = training_set[-3], kernel = 'rbfdot', features = 2)
+# training_set_pca = as.data.frame(predict(kpca, training_set))
+# 
+# training_set_pca$Purchased = training_set$Purchased  # Add target variable
+# test_set_pca = as.data.frame(predict(kpca, test_set))
+# test_set_pca$Purchased = test_set$Purchased # Add target variable
+```
+
+### Feature Scaling
+
+```{r}
+#######################################################################################################
+### Feature Scaling  Not required for Decission Tree because it is not Euclidean Distance Based
+#######################################################################################################
+# scale()
+# 
+# training_set[-9] = scale(training_set[-9])
+# 
+# test_set[-9] = scale(test_set[-9])
+```
+
+
+#######################################################################################################
+### Dummy classifier
+#######################################################################################################
+
+Often when we perform classification tasks using any ML model namely logistic regression, SVM, neural networks etc. it is very useful to determine how well the ML model performs agains at dummy classifier. A dummy classifier uses some simple computation like frequency of majority class, instead of fitting and ML model. It is essential that our ML model does much better that the dummy classifier. This problem is even more important in imbalanced classes where we have only about 10% of +ve samples. If any ML model we create has a accuracy of about 0.90 then it is evident that our classifier is not doing any better than a dummy classsfier which can just take a majority count of this imbalanced class and also come up with 0.90. We need to be able to do better than that.
+
+
+
+```{r}
+
+# Create a simple dummy classifier that computes the ratio of the majority class to the totla
+DummyClassifierAccuracy <- function(train,test,type="majority"){
+  if(type=="majority"){
+      count <- sum(train$fraud_reported==0)/dim(train)[1]
+  }
+  count
+}
+
+Accuracy_Dummy = DummyClassifierAccuracy(training_set,test_set)
+sprintf("Dummy Accuracy is %f",Accuracy_Dummy)
+```
+
+
+#######################################################################################################
+### Fitting DecisionTree to the Training set 
+#######################################################################################################
+
+```{r}
+
+#install.packages("rpart")
+
+library(rpart)
+
+
+DTModel = rpart(formula = fraud_reported ~ ., # Your Y variable and Your X variables  The dot means eveything
+                data = training_set)
+
+#
+```
+
+```{r}
+DTModel
+```
+
+
+#######################################################################################################
+### Predicting the Test set results
+#######################################################################################################
+
+```{r}
+DTPred = predict(DTModel, newdata = test_set[-3], type = 'class')  # Pass the model we created
+                                                                   # Data without target variable
+                                                                   # Type
+                                                                    
+```
+
+```{r}
+DTPred 
+```
+
+#######################################################################################################
+### Creating the Confusion Matrix
+#######################################################################################################
+
+```{r}
+DTcm = table(test_set[,3], DTPred)
+DTcm
+```
+
+
+```{r}
+
+n = sum(DTcm) # number of instances
+nc = nrow(DTcm) # number of classes
+diag = diag(DTcm) # number of correctly classified instances per class 
+rowsums = apply(DTcm, 1, sum) # number of instances per class
+colsums = apply(DTcm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted classes
+
+Accuracy_DT = sum(diag(DTcm))/ sum(DTcm)
+# Precision = diag / colsums 
+# Recall = diag / rowsums 
+# F1_Score = 2 * Precision * Recall / (Precision + Recall) 
+```
+
+#######################################################################################################
+### Calculating the Accuracy
+#######################################################################################################
+
+```{r}
+# data.frame(Precision, Recall, F1_Score)
+Accuracy_DT 
+```
+
+#######################################################################################################
+### Plotting the decision tree
+#######################################################################################################
+
+```{r}
+########################## Plotting the decision tree ##########################
+## par(mar = rep(2, 4))
+
+#install.packages("rpart.plot")
+library(rpart.plot)
+rpart.plot(DTModel)
+
+#plot(DTModel)
+
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+
+# plot mytree
+fancyRpartPlot(DTModel, caption = NULL)
+#text(DTModel)
+```
+
+
+
+```{r}
+DTModel$variable.importance
+barplot(DTModel$variable.importance)
+```
+
+
+#######################################################################################################
+### Fitting Naive Bayes to the Training set 
+#######################################################################################################
+
+### Feature Scaling
+
+```{r}
+training_set[-3] = scale(training_set[-3]) # to make a cool graph to plot the prediction region and
+# prediction boundary
+test_set[-3] = scale(test_set[-3])
+```
+
+### Fitting Naive Bayes to the Training set
+
+```{r}
+
+# install.packages('e1071')
+
+library(e1071)
+
+# x = training_set[-3]
+# y = training_set$fraud_reported
+
+NaiveBayesModel <- naiveBayes(x = training_set[-3], y = training_set$fraud_reported)
+#
+```
+
+```{r}
+#NaiveBayesModel
+```
+
+### Predicting the Test set results
+
+```{r}
+NB_pred = predict(NaiveBayesModel, newdata = test_set[-3])
+```
+
+```{r}
+NB_pred
+```
+
+### Making the Confusion Matrix
+
+```{r}
+NBcm = table(test_set[,3], NB_pred)
+```
+
+```{r}
+NBcm
+```
+
+### 14 incorrect predictions
+
+```{r}
+n = sum(NBcm ) # number of instances
+nc = nrow(NBcm ) # number of classes
+diag = diag(NBcm ) # number of correctly classified instances per class 
+rowsums = apply(NBcm , 1, sum) # number of instances per class
+colsums = apply(NBcm , 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted classes
+
+Accuracy_NB = sum(diag(NBcm ))/sum(NBcm )
+# Precision = diag/colsums
+# Recall = diag / rowsums 
+# F1_Score = 2 * Precision * Recall / (Precision + Recall)
+
+```
+
+########################## Calculating the Accuracy  ##################################################
+
+```{r}
+# data.frame(Precision, Recall, F1_Score)
+Accuracy_NB
+```
+
+
+#######################################################################################################
+### Fitting Logistic Regression to the Training set
+#######################################################################################################
+
+```{r}
+LogisticModel = glm(formula = fraud_reported ~ .,
+                 family = binomial, # 
+                 data = training_set)
+
+```
+
+```{r}
+#LogisticModel
+```
+
+
+### Predicting the Test set results
+# Response will give the probabilities listed in each vector
+
+```{r}
+prob_pred = predict(LogisticModel, type = 'response', newdata = test_set[-3]) 
+
+```
+
+```{r}
+prob_pred
+```
+
+
+```{r}
+glm_pred = ifelse(prob_pred > 0.5, 1, 0)  # Transform probabilities into 1 OR 0
+
+```
+
+```{r}
+glm_pred
+```
+
+### Making the Confusion Matrix
+
+```{r}
+glmcm = table(test_set[, 3], glm_pred)
+
+glmcm  # 33 incorrect predictions
+```
+
+
+```{r}
+n = sum(glmcm) # number of instances
+nc = nrow(glmcm) # number of classes
+diag = diag(glmcm) # number of correctly classified instances per class 
+rowsums = apply(glmcm, 1, sum) # number of instances per class
+colsums = apply(glmcm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted classes
+
+Accuracy_LG = sum(diag(glmcm))/sum(glmcm)
+# Precision = diag/colsums
+# Recall = diag / rowsums 
+# F1_Score = 2 * Precision * Recall / (Precision + Recall) 
+```
+
+
+########################## Calculating the Accuracy  ##################################################
+```{r}
+# data.frame(Precision, Recall, F1_Score)
+Accuracy_LG
+```
+
+#######################################################################################################
+### Fitting SVM to the Training set
+#######################################################################################################
+
+
+### Feature Scaling
+
+```{r}
+training_set[-3] = scale(training_set[-3]) # to make a cool graph to plot the prediction region and
+# prediction boundary
+test_set[-3] = scale(test_set[-3])
+```
+
+### Importing SVM Package
+
+```{r}
+library(e1071)
+
+SVMModel = svm(formula = fraud_reported ~ .,  # Arg 1
+                 data = training_set,  # Arg 2
+                 type = 'C-classification', # Arg 3
+                 kernel = 'linear')
+```
+
+```{r}
+SVMModel
+```
+
+### Predicting the Test set results
+
+```{r}
+SVM_pred = predict(SVMModel, newdata = test_set[-3])
+SVM_pred
+```
+
+### Making the Confusion Matrix
+
+```{r}
+SVMcm = table(test_set[,3], SVM_pred)
+SVMcm
+```
+
+### Calculating the Accuracy
+
+```{r}
+n = sum(SVMcm) # number of instances
+nc = nrow(SVMcm) # number of classes
+diag = diag(SVMcm) # number of correctly classified instances per class 
+rowsums = apply(SVMcm, 1, sum) # number of instances per class
+colsums = apply(SVMcm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted classes
+
+Accuracy_SVM = sum(diag(SVMcm))/sum(SVMcm)
+# Precision = diag/colsums
+# Recall = diag / rowsums 
+# F1_Score = 2 * Precision * Recall / (Precision + Recall) 
+```
+
+########################## Calculating the Accuracy  ##################################################
+
+```{r}
+# data.frame(Precision, Recall, F1_Score)
+Accuracy_SVM
+```
+
+
+
+#######################################################################################################
+### Fitting Kernel SVM to the Training set
+#######################################################################################################
+
+### Importing SVM Package
+
+```{r}
+library(e1071)
+
+KSVMModel = svm(formula = fraud_reported ~ .,  # Arg 1
+                 data = training_set,  # Arg 2
+                 type = 'C-classification', # Arg 3
+                 kernel = 'radial')
+```
+
+### Predicting the Test set results
+
+```{r}
+KSVM_pred = predict(KSVMModel, newdata = test_set[-3])
+KSVM_pred
+```
+
+### Making the Confusion Matrix
+
+```{r}
+KSVMcm = table(test_set[, 3], KSVM_pred)
+KSVMcm
+```
+
+### Calculating the Accuracy
+
+```{r}
+n = sum(KSVMcm) # number of instances
+nc = nrow(KSVMcm) # number of classes
+diag = diag(KSVMcm) # number of correctly classified instances per class 
+rowsums = apply(KSVMcm, 1, sum) # number of instances per class
+colsums = apply(KSVMcm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted classes
+
+Accuracy_KSVM = sum(diag(KSVMcm))/sum(KSVMcm)
+# Precision = diag/colsums
+# Recall = diag / rowsums 
+# F1_Score = 2 * Precision * Recall / (Precision + Recall) 
+```
+
+########################## Calculating the Accuracy  ##################################################
+
+```{r}
+#data.frame(Precision, Recall, F1_Score)
+Accuracy_KSVM
+```
+
+
+
+#######################################################################################################
+### Fitting K-NN to the Training set and Predicting the Test set results
+#######################################################################################################
+
+```{r}
+library(class)
+
+KNN_pred = knn(train = training_set[, -3],
+               test = test_set[, -3],
+               cl = training_set[, 3],
+               k = 7, # 30 
+               prob = TRUE)
+```
+
+### Making the Confusion Matrix
+
+```{r}
+KNNcm = table(test_set[, 3], KNN_pred)
+KNNcm
+```
+
+```{r}
+n = sum(KNNcm) # number of instances
+nc = nrow(KNNcm) # number of classes
+diag = diag(KNNcm) # number of correctly classified instances per class 
+rowsums = apply(KNNcm, 1, sum) # number of instances per class
+colsums = apply(KNNcm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted classes
+
+Accuracy_KNN = sum(diag(KNNcm))/sum(KNNcm)
+# Precision = diag/colsums
+# Recall = diag / rowsums 
+# F1_Score = 2 * Precision * Recall / (Precision + Recall) 
+```
+
+########################## Calculating the Accuracy  ##################################################
+
+```{r}
+# data.frame(Precision, Recall, F1_Score)
+Accuracy_KNN
+```
+
+
