@@ -1,29 +1,9 @@
 
----
-title: "Auto Insurance Claim Prediction"
-author: "BBDS"
-date: "11/18/2019"
-output:
-  html_document: default
-  pdf_document: default
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
 ### Free memory Functions
 
 ```{r}
 # Clear environment
 rm(list = ls()) 
-
-# Clear packages
-# pacman::p_unload(rgl)
-
-# Clear plots
-# dev.off()  # But only if there IS a plot
 
 # Clear console
 cat("\014")  # ctrl+L
@@ -40,7 +20,7 @@ Start by reading in and formatting the data.
 
 ```{r}
 autinsurance <- read.csv(file.choose())
-
+# AUTOINSURANCEV4 FILE USED
 ```
 
 
@@ -73,17 +53,17 @@ library(moments)
 
 
 ```{r}
-names(autinsurance) # variable names
+#names(autinsurance) # variable names
 ```
 
 
 ```{r}
-summary(autinsurance)
+#summary(autinsurance)
 ```
 
 
 ```{r}
-describe(autinsurance) # Psych
+#describe(autinsurance) # Psych
 ```
 
 
@@ -150,7 +130,7 @@ str(autinsurance$fraud_reported)
 
 library(caTools)
 
-set.seed(45) #
+set.seed(45) 
 ```
 
 
@@ -161,69 +141,6 @@ training_set = subset(autinsurance, split == TRUE)
 test_set = subset(autinsurance, split == FALSE)
 ```
 
-### Applying PCA - UL
-
-```{r}
-#######################################################################################################
-## Applying PCA - UL
-#######################################################################################################
-
-# install.packages('caret')
-# library(caret)
-# #
-# pca = preProcess(x = training_set[-9], method = 'pca', pcaComp = 2)
-# #
-# training_set = predict(pca, training_set)
-# training_set = training_set[c(2, 3, 1)]
-# test_set = predict(pca, test_set)
-# test_set = test_set[c(2, 3, 1)]
-```
-
-### Applying LDA - SL
-
-```{r}
-#######################################################################################################
-## Applying LDA - SL
-#######################################################################################################
-
-# library(MASS)
-# lda = lda(formula = Customer_Segment ~ ., data = training_set)
-# training_set = as.data.frame(predict(lda, training_set))
-# training_set = training_set[c(5, 6, 1)]
-# test_set = as.data.frame(predict(lda, test_set))
-# test_set = test_set[c(5, 6, 1)]
-```
-
-### Applying Kernel PCA
-
-```{r}
-
-#######################################################################################################
-### Applying Kernel PCA
-#######################################################################################################
-
-# #install.packages('kernlab')
-# library(kernlab)
-# kpca = kpca(~., data = training_set[-3], kernel = 'rbfdot', features = 2)
-# training_set_pca = as.data.frame(predict(kpca, training_set))
-# 
-# training_set_pca$Purchased = training_set$Purchased  # Add target variable
-# test_set_pca = as.data.frame(predict(kpca, test_set))
-# test_set_pca$Purchased = test_set$Purchased # Add target variable
-```
-
-### Feature Scaling
-
-```{r}
-#######################################################################################################
-### Feature Scaling  Not required for Decission Tree because it is not Euclidean Distance Based
-#######################################################################################################
-# scale()
-# 
-# training_set[-9] = scale(training_set[-9])
-# 
-# test_set[-9] = scale(test_set[-9])
-```
 
 
 #######################################################################################################
@@ -259,15 +176,13 @@ sprintf("Dummy Accuracy is %f",Accuracy_Dummy)
 
 library(rpart)
 
-
 DTModel = rpart(formula = fraud_reported ~ ., # Your Y variable and Your X variables  The dot means eveything
                 data = training_set)
 
-#
 ```
 
 ```{r}
-DTModel
+#DTModel
 ```
 
 
@@ -276,7 +191,7 @@ DTModel
 #######################################################################################################
 
 ```{r}
-DTPred = predict(DTModel, newdata = test_set[-3], type = 'class')  # Pass the model we created
+DTPred = predict(DTModel, newdata = test_set[-34], type = 'class')  # Pass the model we created
                                                                    # Data without target variable
                                                                    # Type
                                                                     
@@ -291,7 +206,7 @@ DTPred
 #######################################################################################################
 
 ```{r}
-DTcm = table(test_set[,3], DTPred)
+DTcm = table(test_set[, 34], DTPred)
 DTcm
 ```
 
@@ -335,12 +250,12 @@ rpart.plot(DTModel)
 
 #plot(DTModel)
 
-library(rattle)
+
 library(rpart.plot)
 library(RColorBrewer)
 
 # plot mytree
-fancyRpartPlot(DTModel, caption = NULL)
+
 #text(DTModel)
 ```
 
@@ -359,9 +274,9 @@ barplot(DTModel$variable.importance)
 ### Feature Scaling
 
 ```{r}
-training_set[-3] = scale(training_set[-3]) # to make a cool graph to plot the prediction region and
+training_set[-34] = scale(training_set[-34]) # to make a cool graph to plot the prediction region and
 # prediction boundary
-test_set[-3] = scale(test_set[-3])
+test_set[-34] = scale(test_set[-34])
 ```
 
 ### Fitting Naive Bayes to the Training set
@@ -375,7 +290,7 @@ library(e1071)
 # x = training_set[-3]
 # y = training_set$fraud_reported
 
-NaiveBayesModel <- naiveBayes(x = training_set[-3], y = training_set$fraud_reported)
+NaiveBayesModel <- naiveBayes(x = training_set[-34], y = training_set$fraud_reported)
 #
 ```
 
@@ -386,7 +301,7 @@ NaiveBayesModel <- naiveBayes(x = training_set[-3], y = training_set$fraud_repor
 ### Predicting the Test set results
 
 ```{r}
-NB_pred = predict(NaiveBayesModel, newdata = test_set[-3])
+NB_pred = predict(NaiveBayesModel, newdata = test_set[-34])
 ```
 
 ```{r}
@@ -396,14 +311,14 @@ NB_pred
 ### Making the Confusion Matrix
 
 ```{r}
-NBcm = table(test_set[,3], NB_pred)
+NBcm = table(test_set[,34], NB_pred)
 ```
 
 ```{r}
 NBcm
 ```
 
-### 14 incorrect predictions
+
 
 ```{r}
 n = sum(NBcm ) # number of instances
@@ -449,7 +364,7 @@ LogisticModel = glm(formula = fraud_reported ~ .,
 # Response will give the probabilities listed in each vector
 
 ```{r}
-prob_pred = predict(LogisticModel, type = 'response', newdata = test_set[-3]) 
+prob_pred = predict(LogisticModel, type = 'response', newdata = test_set[-34]) 
 
 ```
 
@@ -470,7 +385,7 @@ glm_pred
 ### Making the Confusion Matrix
 
 ```{r}
-glmcm = table(test_set[, 3], glm_pred)
+glmcm = table(test_set[, 34], glm_pred)
 
 glmcm  # 33 incorrect predictions
 ```
@@ -503,14 +418,6 @@ Accuracy_LG
 #######################################################################################################
 
 
-### Feature Scaling
-
-```{r}
-training_set[-3] = scale(training_set[-3]) # to make a cool graph to plot the prediction region and
-# prediction boundary
-test_set[-3] = scale(test_set[-3])
-```
-
 ### Importing SVM Package
 
 ```{r}
@@ -529,14 +436,14 @@ SVMModel
 ### Predicting the Test set results
 
 ```{r}
-SVM_pred = predict(SVMModel, newdata = test_set[-3])
+SVM_pred = predict(SVMModel, newdata = test_set[-34])
 SVM_pred
 ```
 
 ### Making the Confusion Matrix
 
 ```{r}
-SVMcm = table(test_set[,3], SVM_pred)
+SVMcm = table(test_set[,34], SVM_pred)
 SVMcm
 ```
 
@@ -584,14 +491,14 @@ KSVMModel = svm(formula = fraud_reported ~ .,  # Arg 1
 ### Predicting the Test set results
 
 ```{r}
-KSVM_pred = predict(KSVMModel, newdata = test_set[-3])
+KSVM_pred = predict(KSVMModel, newdata = test_set[-34])
 KSVM_pred
 ```
 
 ### Making the Confusion Matrix
 
 ```{r}
-KSVMcm = table(test_set[, 3], KSVM_pred)
+KSVMcm = table(test_set[, 34], KSVM_pred)
 KSVMcm
 ```
 
@@ -628,9 +535,9 @@ Accuracy_KSVM
 ```{r}
 library(class)
 
-KNN_pred = knn(train = training_set[, -3],
-               test = test_set[, -3],
-               cl = training_set[, 3],
+KNN_pred = knn(train = training_set[, -34],
+               test = test_set[, -34],
+               cl = training_set[, 34],
                k = 7, # 30 
                prob = TRUE)
 ```
@@ -638,7 +545,7 @@ KNN_pred = knn(train = training_set[, -3],
 ### Making the Confusion Matrix
 
 ```{r}
-KNNcm = table(test_set[, 3], KNN_pred)
+KNNcm = table(test_set[, 34], KNN_pred)
 KNNcm
 ```
 
