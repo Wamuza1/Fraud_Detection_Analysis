@@ -76,7 +76,7 @@ Create a basic scatter plot using the loafercreek dataset.
 
 ![image](https://user-images.githubusercontent.com/92646311/201810310-2090d7d1-195c-458e-8d55-82cae2669416.png)
 
-# library(GGally)
+## library(GGally)
 The function below produces a scatterplot matrix for all the numeric variables in the dataset. This is a good command to use for determining rough linear correlations for continuous variables.
 
 ![image](https://user-images.githubusercontent.com/92646311/201810577-89e3607a-2ee5-46cf-b189-4e5e846c5cca.png)
@@ -87,13 +87,37 @@ The function below produces a scatterplot matrix for all the numeric variables i
 
 ![image](https://user-images.githubusercontent.com/92646311/201810728-a480c55e-266d-4133-8a68-90a4a41784d1.png)
 
-# Quantile comparison plots (QQplot)
+## Quantile comparison plots (QQplot)
 
 A QQ plot is a plot of the actual data values against a normal distribution (which has a mean of 0 and standard deviation of 1).
 
 ![image](https://user-images.githubusercontent.com/92646311/201810879-e0cdd044-9328-4692-a082-2b75806fd647.png)
 
+# Missing Values:
 
+Let’s quickly view what this new missing object looks like using glimpse(). This will print the columns and first row vertically in the console. Because there are 67 columns, we will just look at the first 10.
+
+![image](https://user-images.githubusercontent.com/92646311/201811324-745e4e90-f0ff-4703-afc6-16079c764d3d.png)
+
+To begin with, I'll first check if this data has missing values. This can be done by using:
+
+![image](https://user-images.githubusercontent.com/92646311/201811395-28237184-85f2-4be4-ad02-9595aa2a9997.png)
+
+If there are missing values, we can check these values by using clSums()
+
+![image](https://user-images.githubusercontent.com/92646311/201811469-0b6d7165-4a50-45f9-8a47-ee641c728f3b.png)
+
+# Imputation with mean / median / mode
+
+Replacing the missing values with the mean / median / mode is a crude way of treating missing values. Depending on the context, like if the variation is low or if the variable has low levermonths_as_customer over the response, such a rough approximation is acceptable and could possibly give satisfactory results.
+
+![image](https://user-images.githubusercontent.com/92646311/201811588-7d818087-5bbd-4fc5-94f2-719b69b008e2.png)
+
+# Dealing With Categorical Data
+
+Categorical variables represent types of data which may be divided into groups. Examples of categorical variables are race, sex, age group, educational level etc.
+
+![image](https://user-images.githubusercontent.com/92646311/201812049-65c7ab1d-3baf-44f1-abb4-1aab9c58f57a.png)
 
 
 
