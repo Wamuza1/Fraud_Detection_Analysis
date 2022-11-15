@@ -1,4 +1,5 @@
 # Auto_Insurance Fraud Detection_Analysis
+ The insurance company wants us to develop a model to help them predict which claims are legitimate or fraudulent. We hope to save the company millions of dollars annually by creating a perdictive model.  The answere between 0/1 YES/NO , is a Binary Classification task. A comparison study has been performed to understand which ML algorithm suits best to the dataset. The data that I have is from Automobile Insurance
 
 ### Dataset info:
 
