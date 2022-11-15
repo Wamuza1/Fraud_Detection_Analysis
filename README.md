@@ -1,4 +1,4 @@
-# Fraud_Detection_Analysis
+# Auto_Insurance Fraud Detection_Analysis
 
 ### Dataset info:
 
@@ -135,7 +135,7 @@ Often when we perform classification tasks using any ML model namely logistic re
 
 ![image](https://user-images.githubusercontent.com/92646311/201812463-70d4f540-2c6d-47b8-8012-bd440b8bbe5e.png)
 
-![image](https://user-images.githubusercontent.com/92646311/201813104-491019be-7a4d-4fbe-b89a-020b1930e4d1.png)
+
 
 
 
