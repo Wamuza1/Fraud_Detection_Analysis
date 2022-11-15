@@ -166,6 +166,7 @@ imputing missing values for all independent variables
 #ave()
 autinsurance$months_as_customer = ifelse(is.na(autinsurance$months_as_customer),
                     ave(autinsurance$months_as_customer, FUN = function(x) mean(x, na.rm = TRUE)),autinsurance$months_as_customer)
+
 ```
 
 
@@ -211,11 +212,13 @@ predictor is categorical variable
 
 In the following example, imputate_na() imputes the missing value of Income, a numeric variable of carseats, using the “rpart” method. summary() summarizes missing value imputation information, and plot() visualizes missing information.
 
+
 ```{r}
 find_na(autinsurance)
 find_outliers(autinsurance)
 find_skewness(autinsurance)
 ```
+
 
 
 ```{r}
@@ -300,30 +303,7 @@ autinsurance$z_of_months_as_customer <- (autinsurance$months_as_customer - mean(
 ```{r}
 summary(autinsurance$z_of_months_as_customer)
 ```
-
-However, we could also load a packmonths_as_customer and use a function to do it quickly. For example, the effectsize packmonths_as_customer has a standardize() function.
-
-# install packmonths_as_customer if needed
-```{r}
-install.packages("effectsize")
-import(effectssize)
-autinsurance$z_of_months_as_customer <- effectsize::standardize(autinsurance$months_as_customer)
-```
-
-# to check
-
-```{r}
-summary(autinsurance$z_of_months_as_customer)
-```
-
-
-
-
-
-
-
-
-
+###########################################################
 
 # Dealing With Categorical Data
 Categorical variables represent types of data which may be divided into groups. Examples of categorical variables are race, sex, age group, educational level etc.
@@ -335,5 +315,5 @@ autinsurance$insured_sex
 ```
 
 ```{r}
-write.csv(autinsurance,'autinsurance_V3.csv')
+write.csv(autinsurance,'Resources/autinsurance_V3.csv')
 ```

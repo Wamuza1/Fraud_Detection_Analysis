@@ -21,7 +21,7 @@ cat("\014")  # ctrl+L
 Start by reading in and formatting the data.
 
 ```{r}
-autinsurance <- read.csv(file.choose("../Resources/autinsurance_V2.csv"), stringsAsFactors = TRUE)
+autinsurance <- read.csv(file.choose("../Resources/autinsurance_V3.csv"), stringsAsFactors = TRUE)
 
 ```
 
@@ -96,7 +96,7 @@ ggplot(autinsurance, aes(sample = months_as_customer)) +
 There are a number of ways to get values for skewness and kurtosis. You can get the values alongside other stats with the psych packmonths_as_customer’s describe(). You can also use skewness() and kurtosis() functions from the moments packmonths_as_customer:
 
 ```{r}
-describe(autinsurance)
+#describe(autinsurance)
 ```
 
 ```{r}
