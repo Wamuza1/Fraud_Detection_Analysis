@@ -119,9 +119,23 @@ Categorical variables represent types of data which may be divided into groups. 
 
 ![image](https://user-images.githubusercontent.com/92646311/201812049-65c7ab1d-3baf-44f1-abb4-1aab9c58f57a.png)
 
+# Classification Algorithms:
+
+## Encoding the target feature as factor
+
+![image](https://user-images.githubusercontent.com/92646311/201812801-8a255670-7187-4e5b-ab80-d75bdec19f62.png)
+
+###  From caTools packages we will be using sample.split function
+
+![R_Python_ML_Libraries](https://user-images.githubusercontent.com/92646311/201812996-487e3998-df35-48b2-aa2b-cc629ee85cb5.png)
 
 
+Often when we perform classification tasks using any ML model namely logistic regression, SVM, neural networks etc. it is very useful to determine how well the ML model performs agains at dummy classifier. A dummy classifier uses some simple computation like frequency of majority class, instead of fitting and ML model. It is essential that our ML model does much better that the dummy classifier. This problem is even more important in imbalanced classes where we have only about 10% of +ve samples. If any ML model we create has a accuracy of about 0.90 then it is evident that our classifier is not doing any better than a dummy classsfier which can just take a majority count of this imbalanced class and also come up with 0.90. We need to be able to do better than that.
 
+
+![image](https://user-images.githubusercontent.com/92646311/201812463-70d4f540-2c6d-47b8-8012-bd440b8bbe5e.png)
+
+![image](https://user-images.githubusercontent.com/92646311/201813104-491019be-7a4d-4fbe-b89a-020b1930e4d1.png)
 
 
 
